@@ -1,0 +1,142 @@
+---
+title: "DESeq2_kallisto_normleuk_080217"
+output: html_document
+---
+```{r, message=FALSE}
+#Load packages
+library("DESeq2")
+library("vsn")
+library("pheatmap")
+library("RColorBrewer")
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+library("ggplot2")
+```
+
+#Read in Data
+
+```{r, message=FALSE}
+#Read in counts table from kallisto and annotations file
+genes_counts<- read.delim("genes_kallisto.tsv", row.names=1)
+genes_counts<- na.omit(genes_counts) 
+
+annotations<- read.csv("sample_annotation.csv", row.names=1)
+rownames(annotations)<- colnames(genes_counts)
+
+#Create colData
+colData <- annotations
+colData <- colData[,c("condition","population")]
+row.names(colData)<- colnames(genes_counts)
+
+#Creat DESeq Dataset
+dds <- DESeqDataSetFromMatrix(countData = genes_counts, colData = colData, design=~ population + condition)
+
+#Filter to remove lowly expressed genes
+dds <- dds[ rowSums(counts(dds)) > 5, ]
+```
+
+#Normalisation
+
+```{r, message=FALSE, cache=TRUE}
+#rlog transformation
+rld <- rlog(dds, blind=FALSE)
+
+#VST transformation
+vsd <- vst(dds, blind=FALSE)
+
+#Plot effect of transformation
+par(mfcol = c(1,3))
+meanSdPlot(log2(counts(dds) + 1))
+meanSdPlot(assay(rld))
+meanSdPlot(assay(vsd))
+```
+
+#PCA
+
+```{r, message=FALSE}
+#Plot PCA with ggplots function rld
+pcaData <- plotPCA(rld, intgroup = c( "condition", "population"), returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()
+
+#Plot PCA with ggplots function vsd
+pcaData <- plotPCA(vsd, intgroup = c( "condition", "population"), returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()
+
+#Plot PCA with ggplots function rld 500 variant genes
+pcaData <- plotPCA(rld, intgroup = c( "condition", "population"), returnData=TRUE, ntop=10000)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()
+
+#Plot PCA with ggplots function vsd 500 variant genes
+pcaData <- plotPCA(vsd, intgroup = c( "condition", "population"), returnData=TRUE, ntop=10000)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()
+```
+
+#Distance Heatmap
+
+```{r, message=FALSE}
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+
+#Calculate euclidean distances betwen samples rld
+sampleDists <- dist(t(assay(rld)))
+
+#Convert distances to matrix
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- rownames(colData)
+colnames(sampleDistMatrix) <- NULL
+
+#Plot heatmap of distances
+pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distance_cols=sampleDists,col=colors)
+
+#Calculate euclidean distances betwen samples vsd
+sampleDists <- dist(t(assay(vsd)))
+
+#Convert distances to matrix
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- rownames(colData)
+colnames(sampleDistMatrix) <- NULL
+
+#Plot heatmap of distances
+pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distance_cols=sampleDists,col=colors)
+
+```
+
+#LRT Genes
+
+```{r, message=FALSE}
+colors <- colorRampPalette( rev(brewer.pal(9, "RdBu")) )(255)
+
+#Read in LRT genes
+LRT_genes<-read.csv("DESeq2_LRT_normal.csv", row.names=1)
+
+#Filter data for top LRT genes
+rld.LRT500<- rld[rownames(LRT_genes[1:500,]),]
+vsd.LRT500<- vsd[rownames(LRT_genes[1:500,]),]
+
+#Plot PCA with ggplots function rld 500 LRT genes
+pcaData <- plotPCA(rld.LRT500, intgroup = c( "condition", "population"), returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()
+
+#Plot PCA with ggplots function vsd 500 LRT genes
+pcaData <- plotPCA(vsd.LRT500, intgroup = c( "condition", "population"), returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()
+
+#Plot heatmap of LRT genes
+pheatmap(assay(vsd.LRT500), cluster_rows=T, show_rownames=FALSE,cluster_cols=T, color=colors, scale="row")
+pheatmap(assay(rld.LRT500), cluster_rows=T, show_rownames=FALSE,cluster_cols=T, color=colors, scale="row")
+```
+
+
+
+
+
+
+
+
+
+

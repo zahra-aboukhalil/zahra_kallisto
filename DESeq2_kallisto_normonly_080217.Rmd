@@ -1,0 +1,160 @@
+---
+title: "DESeq2_kallisto_normonly_080217"
+output: html_document
+---
+```{r, message=FALSE}
+#Load packages
+library("DESeq2")
+library("vsn")
+library("pheatmap")
+library("RColorBrewer")
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+```
+
+#Read in Data 
+
+```{r, message=FALSE}
+#Read in counts table from kallisto and annotations file
+genes_counts<- read.delim("genes_kallisto.tsv", row.names=1)
+genes_counts<- na.omit(genes_counts) 
+
+annotations<- read.csv("sample_annotation.csv", row.names=1)
+
+#Flip annotations and merge with gene_counts
+rownames(annotations)<- colnames(genes_counts)
+annotations.t<- t(annotations)
+genes_counts<- rbind(annotations.t[1,], genes_counts)
+
+#Filter for only normal samples
+genes_counts_normal<- genes_counts[,(grep("normal", genes_counts))]
+genes_counts_normal<- genes_counts_normal[-1,]
+genes_counts_normal <- sapply(genes_counts_normal, as.numeric)
+rownames(genes_counts_normal)<- rownames(genes_counts[2:(nrow(genes_counts)),])
+
+#Create colData
+annotations_normal<- annotations[annotations$condition=="normal",]
+colData <- annotations_normal[,2, drop=F]
+
+#Creat DESeq Dataset
+dds <- DESeqDataSetFromMatrix(countData = genes_counts_normal, colData = colData, design=~population)
+
+#Filter to remove lowly expressed genes
+dds <- dds[ rowSums(counts(dds)) > 5, ]
+```
+
+#Normalisation
+
+```{r, cache=TRUE, message=FALSE}
+#VST transformation
+vsd <- vst(dds, blind=FALSE)
+
+#rlog transformation
+rld <- rlog(dds, blind=FALSE)
+
+#Plot effect of transformation
+par(mfcol = c(1,3))
+meanSdPlot(log2(counts(dds) + 1))
+meanSdPlot(assay(rld))
+meanSdPlot(assay(vsd))
+```
+
+#Distance Heatmap
+
+```{r, message=FALSE}
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+
+#Calculate euclidean distances betwen samples rld
+sampleDists <- dist(t(assay(rld)))
+
+#Convert distances to matrix
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- rownames(colData)
+colnames(sampleDistMatrix) <- NULL
+
+#Plot heatmap of distances
+pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distance_cols=sampleDists,col=colors)
+
+#Calculate euclidean distances betwen samples vsd
+sampleDists <- dist(t(assay(vsd)))
+
+#Convert distances to matrix
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- rownames(colData)
+colnames(sampleDistMatrix) <- NULL
+
+#Plot heatmap of distances
+pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distance_cols=sampleDists,col=colors)
+```
+
+#PCA
+
+```{r, message=FALSE}
+#Plot PCA with DESeq2 function
+plotPCA(rld, intgroup = "population")
+plotPCA(vsd, intgroup = "population")
+
+#Filter for variant genes and plot PCA
+plotPCA(rld, intgroup = "population", ntop=500)
+plotPCA(vsd, intgroup = "population", ntop=500)
+```
+
+#Heatmap Highly Expressed Genes
+
+```{r, message=FALSE}
+colors <- colorRampPalette( rev(brewer.pal(9, "RdBu")) )(255)
+
+#Select most highly expressed genes
+select <- order(rowMeans(counts(dds)), decreasing=TRUE)[1:100]
+
+#Plot heatmap of highly expressed genes in vsd
+pheatmap(assay(vsd)[select,], cluster_rows=FALSE, show_rownames=FALSE,cluster_cols=T, color = colors)
+
+#Plot heatmap of highly expressed genes in rld
+pheatmap(assay(rld)[select,], cluster_rows=FALSE, show_rownames=FALSE,cluster_cols=T, color=colors)
+```
+
+#LRT
+
+```{r, cache=TRUE, message=FALSE}
+#LRT on normal samples
+dds <- DESeq(dds, test="LRT", , reduced=~1)
+res <- results(dds)
+
+#Filter on padj 0.05 
+res.05 <- results(dds, alpha=.05)
+summary(res.05)
+
+#Annotate with gene symbol
+res.05$symbol <- mapIds(org.Hs.eg.db,keys=row.names(res.05),column="SYMBOL",keytype="ENSEMBL",multiVals="first")
+
+#Create dataframe sorted by padj
+res.05.df<- as.data.frame(res.05)
+res.05.df <- res.05.df[order(res.05.df$padj),]
+
+#Filter data for top LRT genes
+rld.LRT500<- rld[rownames(res.05.df[1:500,]),]
+vsd.LRT500<- vsd[rownames(res.05.df[1:500,]),]
+```
+
+#PCA & Heatmap with LRT
+
+```{r, message=FALSE}
+#Plot PCA with DESeq2 function
+plotPCA(rld.LRT500, intgroup = "population")
+plotPCA(vsd.LRT500, intgroup = "population")
+
+#Plot heatmap of LRT genes
+pheatmap(assay(vsd.LRT500), cluster_rows=T, show_rownames=FALSE,cluster_cols=T, color=colors, scale = "row")
+pheatmap(assay(rld.LRT500), cluster_rows=T, show_rownames=FALSE,cluster_cols=T, color=colors, scale="row")
+```
+
+```{r, message=FALSE}
+#Export LRT genes
+write.csv(res.05.df, file="DESeq2_LRT_normal.csv")
+```
+
+
+
+
+
