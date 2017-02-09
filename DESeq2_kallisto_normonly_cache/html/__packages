@@ -1,0 +1,16 @@
+base
+BiocGenerics
+S4Vectors
+IRanges
+GenomeInfoDb
+GenomicRanges
+Biobase
+SummarizedExperiment
+DESeq2
+vsn
+pheatmap
+RColorBrewer
+AnnotationDbi
+org.Hs.eg.db
+ggplot2
+hexbin

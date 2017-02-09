@@ -10,6 +10,7 @@ library("pheatmap")
 library("RColorBrewer")
 library("AnnotationDbi")
 library("org.Hs.eg.db")
+library("ggplot2")
 ```
 
 #Read in Data 
@@ -94,6 +95,17 @@ pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distan
 plotPCA(rld, intgroup = "population")
 plotPCA(vsd, intgroup = "population")
 
+#Plot labelled PCA
+pcaData <- plotPCA(rld, intgroup = "population", returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+label<- colnames(dds)
+ggplot(pcaData, aes(PC1, PC2, color=population, label=colnames(dds))) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()+ geom_text(size=2.5, nudge_x = 1, nudge_y = 1, check_overlap = T)
+
+pcaData <- plotPCA(vsd, intgroup = "population", returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+label<- colnames(dds)
+ggplot(pcaData, aes(PC1, PC2, color=population, label=colnames(dds))) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()+ geom_text(size=2.5, nudge_x = 1, nudge_y = 1, check_overlap = T)
+
 #Filter for variant genes and plot PCA
 plotPCA(rld, intgroup = "population", ntop=500)
 plotPCA(vsd, intgroup = "population", ntop=500)
@@ -154,7 +166,52 @@ pheatmap(assay(rld.LRT500), cluster_rows=T, show_rownames=FALSE,cluster_cols=T, 
 write.csv(res.05.df, file="DESeq2_LRT_normal.csv")
 ```
 
+#k-means
 
+```{r, message=FALSE}
+#Calculate kmeans clustering with 8 groups
+kmeans_8<- kmeans(t(assay(vsd)), centers = 8)
 
+#Plot kmeans 8grps on PCA
+pcaData <- plotPCA(vsd, intgroup = "population", returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+shape<- as.factor(kmeans_8$cluster)
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=shape, label=colnames(dds))) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()+scale_shape_manual(values=seq(0,15))+ geom_text(size=2.5, nudge_x = -2, nudge_y = 2, check_overlap = T)
 
+#Calculate kmeans clustering with 7 groups
+kmeans_7<- kmeans(t(assay(vsd)), centers = 7)
+
+#Plot kmeans 7grps on PCA
+pcaData <- plotPCA(vsd, intgroup = "population", returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+shape<- as.factor(kmeans_7$cluster)
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=shape)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()+scale_shape_manual(values=seq(0,15))
+
+#Calculate kmeans with 6grps
+kmeans_6<- kmeans(t(assay(vsd)), centers = 6)
+
+#Plot kmeans 6grps on PCA
+pcaData <- plotPCA(vsd, intgroup = "population", returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+shape<- as.factor(kmeans_6$cluster)
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=shape)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()+scale_shape_manual(values=seq(0,15))
+
+#Calculate kmeans with 5grps
+kmeans_5<- kmeans(t(assay(vsd)), centers = 5)
+
+#Plot kmeans 5grps on PCA
+pcaData <- plotPCA(vsd, intgroup = "population", returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+shape<- as.factor(kmeans_5$cluster)
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=shape)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()+scale_shape_manual(values=seq(0,15))
+
+#Calculate kmeans clustering with 3 groups
+kmeans_3<- kmeans(t(assay(vsd)), centers = 3)
+
+#Plot kmeans 3grps on PCA
+pcaData <- plotPCA(vsd, intgroup = "population", returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+shape<- as.factor(kmeans_3$cluster)
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=shape)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed()+scale_shape_manual(values=seq(0,15))
+```
 
