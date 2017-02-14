@@ -131,8 +131,97 @@ pheatmap(assay(vsd.LRT500), cluster_rows=T, show_rownames=FALSE,cluster_cols=T, 
 pheatmap(assay(rld.LRT500), cluster_rows=T, show_rownames=FALSE,cluster_cols=T, color=colors, scale="row")
 ```
 
+#Just LMPP-GMP AML Populations
+
+```{r, message=FALSE}
+#Filter vsd for just LMPP and GMP AML populations
+vsd.LRT500_LMPP_GMP_AML<- vsd.LRT500[vsd.LRT500$conditon=="leukaemic" and vsd.LRT500$population=="LMPP",]
+```
 
 
+#k-means all genes
+
+```{r, message=FALSE, warning=FALSE}
+#Calculate PCA all genes
+pcaData <- plotPCA(vsd, intgroup = c( "condition", "population"), returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+
+#Calculate kmeans clustering with 1:8 groups
+kmeans_all<- c()
+for(i in 1:8){
+  kmeans_all[i] <- (kmeans(t(assay(vsd)), centers = i))
+}
+
+#Plot kmeans 8grps on PCA
+cluster<- as.factor(unlist(kmeans_all[8]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 7grps on PCA
+cluster<- as.factor(unlist(kmeans_all[7]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 6grps on PCA
+cluster<- as.factor(unlist(kmeans_all[6]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 5grps on PCA
+cluster<- as.factor(unlist(kmeans_all[5]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 4grps on PCA
+cluster<- as.factor(unlist(kmeans_all[4]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 3grps on PCA
+cluster<- as.factor(unlist(kmeans_all[3]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 2grps on PCA
+cluster<- as.factor(unlist(kmeans_all[2]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+```
+
+#k-means LRT genes
+
+```{r, message=FALSE, warning=FALSE}
+#Calculate PCA all genes
+pcaData <- plotPCA(vsd.LRT500, intgroup = c( "condition", "population"), returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+
+#Calculate kmeans clustering with 1:8 groups
+kmeans_all<- c()
+for(i in 1:8){
+  kmeans_all[i] <- (kmeans(t(assay(vsd.LRT500)), centers = i))
+}
+
+#Plot kmeans 8grps on PCA
+cluster<- as.factor(unlist(kmeans_all[8]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 7grps on PCA
+cluster<- as.factor(unlist(kmeans_all[7]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 6grps on PCA
+cluster<- as.factor(unlist(kmeans_all[6]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 5grps on PCA
+cluster<- as.factor(unlist(kmeans_all[5]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 4grps on PCA
+cluster<- as.factor(unlist(kmeans_all[4]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 3grps on PCA
+cluster<- as.factor(unlist(kmeans_all[3]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+
+#Plot kmeans 2grps on PCA
+cluster<- as.factor(unlist(kmeans_all[2]))
+ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
+```
 
 
 
