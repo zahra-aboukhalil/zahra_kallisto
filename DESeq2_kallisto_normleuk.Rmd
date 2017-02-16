@@ -11,6 +11,7 @@ library("RColorBrewer")
 library("AnnotationDbi")
 library("org.Hs.eg.db")
 library("ggplot2")
+library("Rtsne")
 ```
 
 #Read in Data
@@ -131,14 +132,6 @@ pheatmap(assay(vsd.LRT500), cluster_rows=T, show_rownames=FALSE,cluster_cols=T, 
 pheatmap(assay(rld.LRT500), cluster_rows=T, show_rownames=FALSE,cluster_cols=T, color=colors, scale="row")
 ```
 
-#Just LMPP-GMP AML Populations
-
-```{r, message=FALSE}
-#Filter vsd for just LMPP and GMP AML populations
-vsd.LRT500_LMPP_GMP_AML<- vsd.LRT500[vsd.LRT500$conditon=="leukaemic" and vsd.LRT500$population=="LMPP",]
-```
-
-
 #k-means all genes
 
 ```{r, message=FALSE, warning=FALSE}
@@ -223,6 +216,41 @@ cluster<- as.factor(unlist(kmeans_all[2]))
 ggplot(pcaData, aes(PC1, PC2, color=population, shape=condition, label=cluster)) + geom_point(size=2) + xlab(paste0("PC1: ",percentVar[1],"% variance")) + ylab(paste0("PC2: ",percentVar[2],"% variance")) + coord_fixed() + geom_text(size=2.5, nudge_x = -1, nudge_y = 1, check_overlap = T)
 ```
 
+#tSNE
+
+```{r, message=FALSE, cache=TRUE, fig.width=7.5, fig.height=7}
+#Run tsne on all normal and leukaemic populations
+vsd.t<- t(assay(vsd))
+tsne<-Rtsne(vsd.t, perplexity = 10)
+
+#Read in replicate annotations and add to annotations
+replicates<- read.csv("sample_annotation_replicates.csv", row.names=1)
+rownames(replicates)<- colnames(genes_counts)
+annotations_replicates<- cbind(annotations, replicates)
+
+#Convert to dataframe and annotate populations and condition
+tsne_df<-data.frame(tsne$Y)
+tsne_df<- cbind(tsne_df, annotations_replicates)
+
+#Plot tsne
+ggplot(tsne_df, aes(X1, X2, color=population, shape=condition, label=replicate)) + geom_point(size=2) + xlab("X1") + ylab("X2")+ geom_text(size=2.5, nudge_x = 0.3, nudge_y = 0.2, check_overlap = T)
+
+#Run tsne on all normal and leukaemic populations LRT genes
+vsd.t<- t(assay(vsd.LRT500))
+tsne<-Rtsne(vsd.t, perplexity = 10)
+
+#Read in replicate annotations and add to annotations
+replicates<- read.csv("sample_annotation_replicates.csv", row.names=1)
+rownames(replicates)<- colnames(genes_counts)
+annotations_replicates<- cbind(annotations, replicates)
+
+#Convert to dataframe and annotate populations and condition
+tsne_df<-data.frame(tsne$Y)
+tsne_df<- cbind(tsne_df, annotations_replicates)
+
+#Plot tsne of LRT genes
+ggplot(tsne_df, aes(X1, X2, color=population, shape=condition, label=replicate)) + geom_point(size=2) + xlab("X1") + ylab("X2")+ geom_text(size=2.5, nudge_x = 0.3, nudge_y = 0.2, check_overlap = T)
+```
 
 
 
